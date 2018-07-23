@@ -9,7 +9,7 @@ import corpus
 
 
 def read_rules():
-    file = r'E:\project\poc\rule_matching\SELECT_NAME__KEYWORD__NOTWORD__titleKeyW.csv'
+    file = r'E:\项目\移动在线本部\词条匹配\rules\SELECT_NAME__KEYWORD__NOTWORD__titleKeyW.csv'
     rules_cvs = pd.read_csv(file, sep=',', encoding='utf-8', header=None)
     rules = []
     for index, row in rules_cvs.iterrows():
@@ -39,7 +39,7 @@ def read_corpus_news(file_path):
 
 
 def evaluate():
-    recnos, news = read_corpus_news(r'E:\项目\移动在线本部\网罗天下\商机规则匹配\20180102093031_webspider\20180102093031_webspider.out')
+    recnos, news = read_corpus_news(r'20180102093031_webspider\20180102093031_webspider.out')
     rules = read_rules()
     start_time = time.time()
     rules_set1 = match.RulesSet(rules)

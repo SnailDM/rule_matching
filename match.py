@@ -16,15 +16,14 @@ class RulesSet:
         self.keywords = []
         self.total_words = set()
         self.parse_rules(rules)
-        self.lfreq = index_structure(self.total_words)
+        self.lfreq = dict()
+        index_structure(self.lfreq, self.total_words)
 
     def parse_rules(self, rules):
         for rule, rule_label in rules:
             words = re.split('[\+\-\(\)\|]', rule)
             keywords = set(words) - set([''])
-            new_rule = transform_rule(rule)
-            new_rule = new_rule.replace('+', ' and ').replace('-', ' and not ').replace('|', ' or ')
-            new_rule_compile = compile(new_rule, '', 'eval')
+            new_rule_compile = precompile(rule)
             self.rules.append(new_rule_compile)
             self.labels.append(rule_label)
             self.keywords.append(keywords)
@@ -48,7 +47,7 @@ def retrieval_texts(texts, keywords):
     return res
 
 
-# 根据关键字检索结果计算规则表达式
+# 根据关键字检索结果计算规则表达式、
 def compute_rules(rules_set, s_r):
     result = dict()
     for index, rule in enumerate(rules_set.rules):
@@ -61,6 +60,7 @@ def compute_rules(rules_set, s_r):
 
 # 从文本中检索存在的关键字
 def text_search(content, lfreq):
+    content = str(content)
     search_result = dict()
     N = len(content)
     k = 0
@@ -79,8 +79,7 @@ def text_search(content, lfreq):
 
 
 # 解析关键字集合成适合检索的结构  FREQ
-def index_structure(keywords):
-    lfreq = dict()
+def index_structure(lfreq, keywords):
     for word in keywords:
         lfreq[word] = 1
         for ch in range(len(word) - 1):
@@ -92,11 +91,15 @@ def index_structure(keywords):
 
 # 判断检索结果是否含有关键字
 def is_exist(word, search_result):
-    return search_result.get(word, False)
+    if word in search_result:
+        return True
+    else:
+        return False
+    # return search_result.get(word, False)
 
 
 # 将关键字检索结果函数增加到规则字符串中
-def transform_rule(rule):
+def transform_rule(rule, var_name):
     new_rule = ''
     N = len(rule)
     k = 0
@@ -108,12 +111,25 @@ def transform_rule(rule):
         if before_k >= 0 and rule[before_k] in op_set and rule[k] not in op_set:
             new_rule += 'is_exist("'
         if before_k >= 0 and rule[before_k] not in op_set and rule[k] in op_set:
-            new_rule += '", s_r)'
+            new_rule += '", {})'.format(var_name)
         new_rule += rule[k]
         k += 1
     if rule[N-1] not in op_set:
-        new_rule += '", s_r)'
+        new_rule += '", {})'.format(var_name)
     return new_rule
+
+
+def precompile(key_words_rule, var_name='s_r'):
+    """
+    预编译关键字规则，其中s_r为写死的关键字匹配结果变量名称
+    :param key_words_rule:
+    :param var_name:
+    :return:
+    """
+    new_rule = transform_rule(key_words_rule, var_name)
+    new_rule = new_rule.replace('+', ' and ').replace('-', ' and not ').replace('|', ' or ').strip().strip('and').strip()
+    key_words_rule_compile = compile(new_rule, '', 'eval')
+    return key_words_rule_compile
 
 
 if __name__ == '__main__':

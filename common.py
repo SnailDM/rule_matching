@@ -3,10 +3,13 @@
 """
 from collections import defaultdict
 import os
+import datetime as dt
 from datetime import datetime
 import numpy as np
 import pickle
 import time
+import hashlib
+import json
 
 # 极小值
 EPS = 1e-100
@@ -29,6 +32,21 @@ def ergodic_file(path):
         for filename in files:
             file_list.append(os.path.join(f_path, filename))
     return file_list
+
+
+def mk_dir(path):
+    """
+    若目录不存在，则多层创建该目录
+    :param path:目录
+    """
+    # 去除首位空格， 去除尾部 \ 符号
+    path = path.strip().rstrip("\\").rstrip("/")
+    # 判断路径是否存在
+    is_exist = os.path.exists(path)
+    # 判断结果
+    if not is_exist:
+        # 创建目录操作函数
+        os.makedirs(path)
 
 
 # 读取语料中的文本内容
@@ -67,10 +85,44 @@ def save_cache(cache, cache_file_name):
         pickle.dump(cache, f)
 
 
+# 获取今天日期
+def get_today():
+    today = dt.date.today()
+    return today
+
+
+# 获取昨天日期
+def get_yesterday():
+    today = dt.date.today()
+    one_day = dt.timedelta(days=1)
+    yesterday = today-one_day
+    return yesterday
+
+
 # 返回当前的时间戳
 def time_stamp():
     stamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
     return stamp
+
+
+def string2date(string, f='%Y-%m-%d'):
+    """把字符串转成date"""
+    return datetime.strptime(str(string), f).date()
+
+
+def string2datetime(string, f='%Y-%m-%d %H:%M:%S'):
+    """把字符串转成datetime"""
+    return datetime.strptime(str(string), f)
+
+
+def string2timestamp(str_time, f='%Y-%m-%d %H:%M:%S'):
+    """把字符串转成时间戳形式"""
+    return time.mktime(string2datetime(str_time, f).timetuple())
+
+
+def timestamp2string(stamp, f='%Y-%m-%d %H:%M:%S'):
+    """把时间戳转成字符串形式"""
+    return time.strftime(f, time.localtime(stamp))
 
 
 # 从指定文件拷贝部分文件到目标文件夹
@@ -97,6 +149,23 @@ def str_q2b(ustring):
 
         rstring += chr(inside_code)
     return rstring
+
+
+def read_file_md5(file_name):
+    with open(file_name, 'r', encoding='utf-8') as f:
+        text = f.readlines()
+        md5 = hashlib.md5(str(text).encode('utf-8')).hexdigest()
+        return text, md5
+
+
+def json2dict(s):
+    """
+    json字符串转字典
+    :param s: json字符串
+    :return: 字典
+    """
+    d = json.loads(s)
+    return d
 
 
 def str_clean(ustring):
@@ -131,3 +200,8 @@ def dd1_set():
 def dd2(dd1):
     return defaultdict(dd1)
 
+
+if __name__ == '__main__':
+    ts = string2timestamp('2018-06-25 00:00:00')
+    file_name = r'E:\项目\移动在线本部\词条匹配\rules\word_config.txt'
+    text1, md51 = read_file_md5(file_name)
